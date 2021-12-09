@@ -6,6 +6,26 @@ require "io/console"
 class ExpenseData
   def initialize
     @connection = PG.connect(dbname: "expense")
+
+    setup_schema
+  end
+
+  def setup_schema
+    existing_schema = connection.exec <<~SQL
+      SELECT COUNT(*) FROM information_schema.tables 
+        WHERE table_schema = 'public' AND table_name = 'expenses';
+      SQL
+
+    if existing_schema[0]["count"] == "0"
+      connection.execc <<~SQL
+        CREATE TABLE expenses (
+`        id serial PRIMARY KEY,
+        amount numeric(6, 2) NOT NULL,
+        memo text NOT NULL,
+        created_on date DEFAULT CURRENT_DATE NOT NULL`
+        );
+      SQL
+    end
   end
 
   def display_expenses(expenses)
